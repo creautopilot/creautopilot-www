@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CRE Autopilot — Multifamily</title>
+
+  <!-- Fonts (optional). If offline or blocked, it falls back. -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN (requires internet). Page still renders if blocked. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+            display: ['Poppins','Inter','ui-sans-serif']
+          },
+          colors: {
+            brand: {
+              navy: '#10233F',
+              teal: '#11B0A2',
+              tealDark: '#0D8E84',
+              slate: '#44536A',
+              line: '#E5E8EF',
+              bg: '#F5F6F8',
+              card: '#FFFFFF'
+            }
+          },
+          boxShadow: {
+            soft: '0 10px 30px rgba(16,35,63,0.08)',
+            ring: '0 0 0 6px rgba(17,176,162,0.18)'
+          },
+          borderRadius: { xl2: '1.25rem' }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background:#F5F6F8; color:#10233F; }
+    .h1 { font-family: Poppins, Inter, system-ui; font-weight:800; line-height:1.15; font-size:clamp(2rem,4.5vw,3.25rem); }
+    .h2 { font-family: Poppins, Inter, system-ui; font-weight:700; font-size:clamp(1.5rem,3vw,2rem); }
+    .muted { color:#44536A; font-size:15px; line-height:1.7; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; border-radius:1.25rem; padding:.75rem 1.25rem; font-weight:600; font-size:.95rem; transition:.2s; }
+    .btn-primary { background:#11B0A2; color:#fff; box-shadow:0 10px 30px rgba(16,35,63,.08); }
+    .btn-primary:hover { background:#0D8E84; transform:translateY(-1px); }
+    .btn-outline { background:#fff; color:#10233F; border:1px solid rgba(16,35,63,.15); }
+    .btn-outline:hover { box-shadow:0 10px 30px rgba(16,35,63,.08); }
+    .card { background:#fff; border:1px solid #E5E8EF; border-radius:1rem; box-shadow:0 10px 30px rgba(16,35,63,.08); }
+    .chip { display:inline-flex; gap:.5rem; align-items:center; border:1px solid #E5E8EF; background:#fff; color:#44536A; border-radius:999px; padding:.25rem .6rem; font-size:12px; }
+
+    /* subtle vignette & glow */
+    .about-bg:before{
+      content:""; position:absolute; inset:-20%;
+      background:
+        radial-gradient(60rem 60rem at 75% 20%, rgba(32, 196, 178, .10), transparent 60%),
+        radial-gradient(40rem 40rem at -10% 80%, rgba(32, 196, 178, .08), transparent 60%);
+      pointer-events:none; z-index:0;
+    }
+    /* card glass */
+    .glass {
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+      backdrop-filter: blur(10px);
+    }
+    /* === Testimonial slide animations === */
+    @keyframes in-from-right { from{opacity:0; transform:translateX(32px)} to{opacity:1; transform:none} }
+    @keyframes out-to-left   { from{opacity:1; transform:none}           to{opacity:0; transform:translateX(-32px)} }
+    @keyframes in-from-left  { from{opacity:0; transform:translateX(-32px)} to{opacity:1; transform:none} }
+    @keyframes out-to-right  { from{opacity:1; transform:none}             to{opacity:0; transform:translateX(32px)} }
+
+    /* typewriter caret */
+    @keyframes caret-blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+    .typed-caret{
+      display:inline-block; width:1ch; border-right:2px solid currentColor;
+      margin-left:1px; animation: caret-blink 1s steps(1) infinite;
+    }
+
+    .testi-anim-in-right { animation: in-from-right .35s ease both; }
+    .testi-anim-out-left { animation: out-to-left   .35s ease both; }
+    .testi-anim-in-left  { animation: in-from-left  .35s ease both; }
+    .testi-anim-out-right{ animation: out-to-right  .35s ease both; }
+
+    /* stack slides so they animate over each other cleanly */
+    #testi-slides { position: relative; overflow: hidden; }
+    #testi-slides .testi-slide {
+      position: absolute;
+      left: 0; right: 0; top: 0;   /* no bottom */
+      width: 100%;
+    }
+    /* ====== Infinite left-scrolling logo marquee ====== */
+    .marquee {
+      position: relative;
+      overflow: hidden;
+      --gap: 4rem;            /* space between logos */
+      --speed: 36s;           /* lower = faster */
+      --edge: 8%;             /* fade width on sides */
+    }
+
+
+    /* track holds two identical groups to loop seamlessly */
+    .marquee-track{
+      display:flex; align-items:center; gap: var(--gap);
+      width: max-content;
+      animation: marquee-scroll var(--speed) linear infinite;
+    }
+
+    /* pause on hover/focus */
+    .marquee:hover .marquee-track,
+    .marquee:focus-within .marquee-track{ animation-play-state: paused; }
+
+
+    /* actual movement: translate by 50% of content (two groups) */
+    @keyframes marquee-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* consistent logo sizing & subtle styling */
+    .logo-item{
+      height: 36px;          /* tweak sizes as needed */
+      opacity:.95; filter: grayscale(20%);
+      transition: filter .2s, opacity .2s, transform .2s;
+    }
+    @media (min-width:768px){ .logo-item{ height:42px; } }
+    .logo-item:hover{ filter:none; opacity:1; transform: translateY(-1px); }
+    .progress{ width:var(--w,75%); transform-origin:left; transform:scaleX(0);
+              animation:progress-grow 2s ease-out forwards; }
+    @keyframes progress-grow { to { transform:scaleX(1); } }
+
+    /* make the track wider than the viewport by preventing shrink */
+    .marquee-track > * { flex: 0 0 auto; }
+
+
+    /* optional: smoother GPU compositing */
+    .marquee-track { will-change: transform; }
+    /* --- Unified scroll-in fades --- */
+    .reveal,
+    .fade,
+    .fade-item,
+    .stagger > * {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 900ms cubic-bezier(.2,.7,.2,1), transform 900ms cubic-bezier(.2,.7,.2,1);
+      will-change: opacity, transform;
+    }
+    .reveal.in,
+    .fade.in,
+    .fade-item.in,
+    .stagger.in > * {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Stagger with existing --i custom property or order */
+    .stagger.in > * { transition-delay: calc(var(--i, 0) * 90ms); }
+
+    /* Keep your existing simple float/glow etc. */
+    .float-slow { animation: float 12s ease-in-out infinite; }
+    .float-slower { animation: float 16s ease-in-out infinite reverse; }
+    @keyframes float {
+      0% { transform: translateY(0) translateX(0) scale(1); }
+      50% { transform: translateY(-12px) translateX(6px) scale(1.03); }
+      100% { transform: translateY(0) translateX(0) scale(1); }
+    }
+
+    /* Optional helper for things that should slide from left */
+    .slide-left { transform: translateX(-18px); }
+    .slide-left.in { transform: none; }
+
+    /* Delay helpers now use transition-delay (not animation-delay) */
+    .delay-1 { transition-delay: .10s !important; }
+    .delay-2 { transition-delay: .30s !important; }
+    .delay-3 { transition-delay: .50s !important; }
+    .delay-4 { transition-delay: .70s !important; }
+
+    /* Glassy header backdrop */
+    header.backdrop { backdrop-filter:saturate(180%) blur(10px); background:rgba(255,255,255,.75); }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- Top note -->
+    <div class="w-full border-b border-brand-line bg-white/70">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2 text-center text-xs text-brand-slate">
+        Upload an OM + Rent Roll → get DSCR/LTV, a cash-flow model, and a lender-ready memo in minutes.
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 border-b border-brand-line backdrop">
+      <div class="mx-auto max-w-7xl h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <a class="flex items-center gap-3" href="#">
+          <!-- Put your logo file next to this html and use the exact filename -->
+          <img src="assets/cre_autopilot_logo_ONLY.png" alt="CRE Autopilot" class="h-9 w-auto" onerror="this.style.display='none'" />
+          <span class="font-[800] text-lg sm:text-xl">CRE Autopilot</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-8 text-[15px] text-brand-slate">
+          <a href="#s1" class="hover:text-brand-navy">Home</a>
+          <a href="#s2" class="hover:text-brand-navy">About</a>
+          <a href="#s3" class="hover:text-brand-navy">How it works</a>
+          <a href="#s4" class="hover:text-brand-navy">Benefits</a>
+          <a href="#s5" class="hover:text-brand-navy">Deep Dive</a>
+          <a href="#s6" class="hover:text-brand-navy">Pricing</a>
+          <a href="#s7" class="hover:text-brand-navy">Get Started</a>
+          <a href="#s8" class="hover:text-brand-navy">Customers</a>
+        </nav>
+        <div class="hidden md:flex items-center gap-3">
+          <button class="btn btn-outline">Sign in</button>
+          <button class="btn btn-primary">Book Demo</button>
+        </div>
+        <button @click="mobile=!mobile" class="md:hidden p-2 rounded-lg border border-brand-line" aria-label="menu">
+          <svg v-if="!mobile" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div v-show="mobile" class="md:hidden border-t border-brand-line bg-white">
+        <div class="px-4 py-3 grid gap-2 text-sm">
+          <a v-for="l in links" :key="l.href" :href="l.href" class="block text-brand-slate hover:text-brand-navy">{{ l.text }}</a>
+          <div class="pt-2 flex gap-2">
+            <button class="flex-1 btn btn-outline">Sign in</button>
+            <button class="flex-1 btn btn-primary">Book Demo</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== Decorative animated SVGs (global, no external files) ===== -->
+    <svg class="pointer-events-none fixed -z-10 inset-0" width="100%" height="100%" preserveAspectRatio="none">
+      <!-- soft gradient blob top-right -->
+      <defs>
+        <radialGradient id="g1" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#11B0A2" stop-opacity=".18"/>
+          <stop offset="100%" stop-color="#11B0A2" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="g2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#10233F" stop-opacity=".10"/>
+          <stop offset="100%" stop-color="#10233F" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle class="float-slow" cx="85%" cy="8%" r="240" fill="url(#g1)"/>
+      <circle class="float-slower" cx="10%" cy="85%" r="220" fill="url(#g2)"/>
+    </svg>
+
+   <!-- ============== S1 — Full-bleed gradient hero ============== -->
+  <section id="s1" class="relative isolate overflow-hidden text-white bg-gradient-to-br from-[#0E3044] via-[#0C5A66] to-[#11B0A2]">
+    <!-- optional soft vignette -->
+    <div class="pointer-events-none absolute inset-0 bg-black/0 via-black/0 to-black/0"></div>
+
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 reveal">
+      <div class="grid lg:grid-cols-2 gap-10 items-center py-12 sm:py-16 lg:py-24">
+        <!-- Left copy -->
+        <div>
+          <h1 class="font-[800] leading-tight text-[clamp(2rem,4.5vw,3.25rem)]">
+            Your AI-Powered Multifamily Deal Analyst — Ready 24/7
+          </h1>
+          <p class="mt-5 text-white/90 text-[15px] leading-7">
+            Underwrite. Analyze. Advise. All through one simple chat interface.
+          </p>
+          <p class="mt-3 text-white/90 text-[15px] leading-7 max-w-xl">
+            Meet <b>CRE Multifamily Autopilot</b>, the first product from <b>CRE Autopilot</b>, built to automate the entire multifamily acquisition process.
+          </p>
+
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <button class="inline-flex items-center justify-center rounded-[20px] px-5 py-3 text-sm font-semibold bg-white text-[#0E3044] hover:opacity-95">
+              Try the Demo
+            </button>
+            <button class="inline-flex items-center justify-center rounded-[20px] px-5 py-3 text-sm font-semibold border border-white/40 text-white hover:bg-white/10">
+              Book a Demo Call
+            </button>
+          </div>
+
+          <div class="mt-4 flex gap-6 text-xs text-white/85">
+            <div class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-white/80"></span>Market Data</div>
+            <div class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-white/80"></span>Underwriting</div>
+            <div class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-white/80"></span>Advice</div>
+          </div>
+        </div>
+
+        <!-- Right: chat mock -->
+        <div class="flex justify-center lg:justify-end">
+          <div id="chat-card" class="w-full max-w-[520px] rounded-xl bg-white text-[#10233F] shadow-[0_14px_40px_rgba(0,0,0,.18)]">
+            <div class="px-5 py-4 border-b border-white/40/0">
+              <div class="flex gap-1">
+                <span class="h-2.5 w-2.5 rounded-full bg-[#FF6B6B]"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-[#FFD166]"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-[#06D6A0]"></span>
+              </div>
+            </div>
+            <div class="p-5 space-y-4 text-[15px]">
+              <div class="rounded-lg bg-[#F3F6FA] text-[#10233F] px-4 py-3">
+                <div class="font-semibold text-[#3A4B63]">User:</div>
+                <div class="mt-1 text-[15px]" aria-live="polite">
+                  <span id="typed-msg"></span><span class="typed-caret" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="px-1">
+                <span class="font-semibold text-[#0F8F85]">AI:</span>
+                <span class="text-[#3A4B63] ml-1">
+                  <span id="typed-ai"></span><span class="typed-caret" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+            <div class="px-5 py-4 border-t border-[#E5E8EF]">
+              <div class="rounded-full border border-[#E5E8EF] bg-white px-4 py-2.5 text-[#6B7B8F] text-sm">Type a message…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- subtle curved separator into the light page -->
+    <div class="absolute bottom-0 left-0 right-0 h-5 bg-gradient-to-b from-transparent to-[#F5F6F8]"></div>
+    
+  </section>
+
+   <!-- =========================Section 2 – About CRE Autopilot========================= -->
+  <section id="s2" class="relative isolate overflow-hidden py-20 md:py-28 bg-[#0c1420] text-white">
+
+    <div class="container mx-auto max-w-7xl px-6 relative z-9 reveal slide-left">
+      <div class="grid gap-10 lg:grid-cols-2 lg:gap-16 items-start">
+        <!-- Left column -->
+        <div>
+          <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tight">About CRE Autopilot</h2>
+          <p class="mt-2 text-teal-300 font-semibold">AI agents for real estate professionals</p>
+
+          <p class="mt-6 text-slate-300 leading-relaxed max-w-xl">
+            CRE Autopilot builds intelligent agents that automate commercial real estate analysis and underwriting —
+            giving every professional a digital deal analyst that works as fast as they think.
+          </p>
+
+          <!-- Feature callout -->
+          <div class="glass mt-8 rounded-xl p-6 border border-white/5">
+            <div class="flex items-start gap-3">
+              <!-- placeholder icon -->
+              <div class="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-400/15 text-teal-300">
+                <!-- swap with your icon -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <!-- Bulb -->
+                <path d="M12 2c-4.418 0-8 3.357-8 7.5 0 2.63 1.372 4.67 3.215 6.032.44.33.785.77.996 1.28L8.6 18h6.8l.39-1.188c.211-.51.557-.95.997-1.28C18.628 14.17 20 12.13 20 9.5 20 5.357 16.418 2 12 2z"/>
+                <!-- Base -->
+                <path d="M8.75 20.5A1.75 1.75 0 0 0 10.5 22h3a1.75 1.75 0 0 0 1.75-1.5H8.75z"/>
+              </svg>
+              </div>
+              <p class="text-slate-100 font-semibold">
+                Our first product — <span class="text-white">CRE Multifamily Autopilot</span> — automates multifamily deal analysis,
+                underwriting, and pitchbook generation.
+              </p>
+            </div>
+          </div>
+
+          <!-- Three feature badges -->
+          <div class="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8 stagger">
+            <div class="flex flex-col items-center gap-3" style="--i:0">
+              <div class="h-14 w-14 rounded-full bg-teal-400/15 ring-1 ring-white/10 grid place-items-center text-teal-300">
+                <!-- placeholder icon -->
+                <img src="assets/section_2_house.png" alt="" class="h-6 w-4 opacity-90">
+              </div>
+              <span class="text-sm text-slate-300">Multifamily Focus</span>
+            </div>
+            <div class="flex flex-col items-center gap-3" style="--i:1">
+              <div class="h-14 w-14 rounded-full bg-teal-400/15 ring-1 ring-white/10 grid place-items-center text-teal-300">
+                <img src="assets/section_2_trend.png" alt="" class="h-6 w-5 opacity-90">
+              </div>
+              <span class="text-sm text-slate-300">Data-Driven</span>
+            </div>
+            <div class="flex flex-col items-center gap-3" style="--i:2">
+              <div class="h-14 w-14 rounded-full bg-teal-400/15 ring-1 ring-white/10 grid place-items-center text-teal-300">
+                <img src="assets/section_2_bot.png" alt="" class="h-6 w-5 opacity-90">
+              </div>
+              <span class="text-sm text-slate-300">AI-Powered</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="relative">
+          <!-- circular hero with placeholders -->
+          <div class="relative mx-auto aspect-square w-[clamp(220px,38vw,300px)] rounded-full bg-gradient-to-b from-slate-800/50 to-slate-900/70 ring-1 ring-white/10 shadow-[0_0_60px_rgba(32,196,178,.15)]">
+
+          <!-- center logo -->
+          <img src="assets/section_2_brain.png"
+              alt="Logo placeholder"
+              class="absolute left-[33%] top-[20%] h-27 w-27 opacity-90">
+
+          <!-- overlay icons (percent-based so they adapt with size) -->
+          <img src="assets/section_2_file_1.png"    class="absolute left-[12%] top-[25%] h-10 w-6 opacity-70"  alt="">
+          <img src="assets/section_2_file_2.svg" class="absolute left-[27%] top-[10%] h-10 w-10 opacity-70"  alt="">
+          <img src="assets/section_2_chart.svg"    class="absolute right-[16%] top-[14%] h-10 w-10 opacity-70"  alt="">
+          <img src="assets/section_2_magnify.svg" class="absolute left-[20%] bottom-[14%] h-10 w-10 opacity-70" alt="">
+          <img src="assets/section_2_calc.png"   class="absolute right-[20%] bottom-[14%] h-10 w-5 opacity-70" alt="">
+
+          <!-- progress bar -->
+          <div class="absolute left-1/2 top-[60%] -translate-x-1/2 w-2/3">
+            <div class="text-xs text-slate-300/80 mb-1">Deal Analysis Progress</div>
+            <div class="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+              <!-- set your target percent via --p (0..1). Example: 0.75 = 75% -->
+              <div id="deal-progress"
+                  class="h-full rounded-full bg-teal-400 progress"
+                  style="--p:0.75"></div>
+            </div>
+          </div>
+        </div>
+
+          <!-- bottom-right glass panel with phased-in bullets -->
+          <div class="glass mt-8 ml-auto max-w-xl rounded-2xl p-6 text-slate-100 border border-white/5 md:rounded-2xl">
+            <ul class="space-y-4 text-base">
+              <li class="fade-item delay-1 flex gap-3">
+                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal-400"></span>
+                Analyze markets &amp; comps automatically
+              </li>
+              <li class="fade-item delay-2 flex gap-3">
+                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal-400"></span>
+                Underwrite deals in Excel-based formats
+              </li>
+              <li class="fade-item delay-3 flex gap-3">
+                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal-400"></span>
+                Generate investor and lender pitchbooks
+              </li>
+              <li class="fade-item delay-4 flex gap-3">
+                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal-400"></span>
+                Ask &amp; answer deal or market questions instantly
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================== S3 — Slide 3 =================== -->
+  <section id="s3" class="py-14 sm:py-16 lg:py-20 border-t border-brand-line">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 reveal slide-left">
+      <h2 class="h2">A Chat Interface Built for Real Estate Professionals</h2>
+      <p class="muted mt-2">As simple as texting your analyst</p>
+      <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+
+        <!-- connector lines between columns (only show on md+) -->
+        <div class="relative hidden md:block h-6 mb-0 fade">
+          <div class="absolute left-[33.33%] top-9 -translate-x-1/2 -translate-y-1/2 h-[3px] w-16 bg-[#11B0A2] rounded-full"></div>
+          <div class="absolute left-[66.66%] top-9 -translate-x-1/2 -translate-y-1/2 h-[3px] w-16 bg-[#11B0A2] rounded-full"></div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-10 text-center fade slide-left">
+          <!-- Step 1 -->
+          <div class="fade-item delay-2 flex flex-col items-center">
+            <!-- icon disk + number badge -->
+            <div class="relative">
+              <div class="h-14 w-14 rounded-full bg-[#EEF2F6] grid place-items-center">
+                <!-- chat icon (navy) -->
+                <svg width="30" height="30" viewBox="3 0 20 20" fill="none">
+                  <path d="M7 10a5 5 0 015-5h2a5 5 0 010 10h-1l-3 3v-3H12a5 5 0 01-5-5Z" fill="#10233F" opacity=".95"/>
+                </svg>
+              </div>
+              <div class="absolute -top-2 -left-2 h-7 w-7 rounded-full bg-[#11B0A2] text-white text-sm font-semibold grid place-items-center">1</div>
+            </div>
+
+            <h3 class="mt-4 text-[18px] font-semibold text-[#10233F]">Chat Like You Think</h3>
+            <p class="mt-2 text-[15px] leading-7 text-[#44536A] max-w-xs">
+              Type "Underwrite 123 Main Street.“<br/>
+              Provide available data. AI processes and<br/>gathers additional data automatically.
+            </p>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="fade-item delay-3 flex flex-col items-center">
+            <div class="relative">
+              <div class="h-14 w-14 rounded-full bg-[#EEF2F6] grid place-items-center">
+                <!-- table/grid icon -->
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 5h14v14H5z" stroke="#10233F" stroke-width="2"/>
+                  <path d="M5 9.5h14M9.5 5v14" stroke="#10233F" stroke-width="2"/>
+                </svg>
+              </div>
+                <div class="absolute -top-2 -left-2 h-7 w-7 rounded-full bg-[#11B0A2] text-white text-sm font-semibold grid place-items-center">2</div>
+            </div>
+
+              <h3 class="mt-4 text-[18px] font-semibold text-[#10233F]">Review Your Analysis</h3>
+              <p class="mt-2 text-[15px] leading-7 text-[#44536A] max-w-xs">
+                Full Excel-style model. You can use our<br/>default model, or we can customize to<br/>use your own template.
+              </p>
+            </div>
+
+          <!-- Step 3 -->
+          <div class="fade-item delay-4 flex flex-col items-center">
+              <div class="relative">
+                <div class="h-14 w-14 rounded-full bg-[#EEF2F6] grid place-items-center">
+                  <!-- refresh arrows icon -->
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 12a7 7 0 10-2.05 4.95" stroke="#10233F" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M20 8v4h-4" stroke="#10233F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="absolute -top-2 -left-2 h-7 w-7 rounded-full bg-[#11B0A2] text-white text-sm font-semibold grid place-items-center">3</div>
+              </div>
+
+              <h3 class="mt-4 text-[18px] font-semibold text-[#10233F]">Keep the Conversation Going</h3>
+              <p class="mt-2 text-[15px] leading-7 text-[#44536A] max-w-xs">
+                "What's breakeven occupancy?" "Run a<br/>downside case."
+              </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+    <!-- ===== S4 — Key Features & Benefits (compact height) ===== -->
+    <section id="s4" class="py-10 lg:py-14 isolate bg-gradient-to-b from-[#0E243C] to-[#0B1F33] text-white">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <h2 class="font-[800] text-[clamp(1.6rem,3.2vw,2.2rem)] reveal slide-left">Key Features and Benefits</h2>
+        <p class="mt-1 text-white/80">Why professionals choose CRE Multifamily Autopilot</p>
+
+        <div class="mt-6 grid gap-5 lg:grid-cols-3 fade-item delay-2">
+          <!-- Card template (x6) -->
+          <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_6px_20px_rgba(0,0,0,.22)] p-6">
+            <div class="mx-auto h-14 w-14 rounded-full bg-[#21B6A8] grid place-items-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 10a5 5 0 015-5h2a5 5 0 010 10h-1l-3 3v-3H12a5 5 0 01-5-5Z" fill="white"/></svg>
+            </div>
+            <h3 class="mt-4 text-[17px] font-semibold text-center">Conversational Front End</h3>
+            <p class="mt-1 text-[14.5px] leading-6 text-white/80 text-center">Built like ChatGPT, trained for CRE.</p>
+          </div>
+
+          <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_6px_20px_rgba(0,0,0,.22)] p-6">
+            <div class="mx-auto h-14 w-14 rounded-full bg-[#21B6A8] grid place-items-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="white"/><path d="M4 20a8 8 0 0116 0" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="mt-4 text-[17px] font-semibold text-center">Personalized Deal Assistant</h3>
+            <p class="mt-1 text-[14.5px] leading-6 text-white/80 text-center">Remembers your deals, assumptions, and preferences. Answer your deal related questions.</p>
+          </div>
+
+          <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_6px_20px_rgba(0,0,0,.22)] p-6">
+            <div class="mx-auto h-14 w-14 rounded-full bg-[#21B6A8] grid place-items-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 18V6m0 12h16M8 14l3-3 3 2 4-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h3 class="mt-4 text-[17px] font-semibold text-center">Scenario-Ready</h3>
+            <p class="mt-1 text-[14.5px] leading-6 text-white/80 text-center">Adjust assumptions or run “What-if” cases instantly.</p>
+          </div>
+
+          <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_6px_20px_rgba(0,0,0,.22)] p-6">
+            <div class="mx-auto h-14 w-14 rounded-full bg-[#21B6A8] grid place-items-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6" stroke="white" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="mt-4 text-[17px] font-semibold text-center">Transparent Analytics</h3>
+            <p class="mt-1 text-[14.5px] leading-6 text-white/80 text-center">Exportable, auditable Excel outputs.</p>
+          </div>
+
+          <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_6px_20px_rgba(0,0,0,.22)] p-6">
+            <div class="mx-auto h-14 w-14 rounded-full bg-[#21B6A8] grid place-items-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 13h6l-1 9 11-14h-6l1-6z" fill="white"/></svg>
+            </div>
+            <h3 class="mt-4 text-[17px] font-semibold text-center">Speed &amp; Accuracy</h3>
+            <p class="mt-1 text-[14.5px] leading-6 text-white/80 text-center">Automates 80% of front-end work.</p>
+          </div>
+
+          <div class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,.04),0_6px_20px_rgba(0,0,0,.22)] p-6">
+            <div class="mx-auto h-14 w-14 rounded-full bg-[#21B6A8] grid place-items-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8 9a3 3 0 016 0m-8 2a4 4 0 108 0 4 4 0 10-8 0Z" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="mt-4 text-[17px] font-semibold text-center">Great Potential</h3>
+            <p class="mt-1 text-[14.5px] leading-6 text-white/80 text-center">Power Asset Management and Portfolio Management functions in the future.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- shorter fade -->
+      <div class="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-b from-transparent to-[#0A1B2E]"></div>
+    </section>
+
+
+
+    <!-- ================== S5 — Slide 5 =================== -->
+    <section id="s5" class="py-14 sm:py-16 lg:py-20 border-t border-brand-line">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 reveal">
+        <h2 class="h2">Product Features Deep Dive</h2>
+        <p class="muted mt-2">Inside the Multifamily Autopilot</p>
+        <div class="mt-6 flex flex-wrap gap-2">
+          <button v-for="t in deepTabs" :key="t.key" class="btn" :class="tab===t.key?'btn-primary':'btn-outline'" @click="tab=t.key">{{t.label}}</button>
+        </div>
+        <div class="mt-6 card p-6">
+          <template v-if="tab==='engine'"><div class="font-semibold">Deal Analysis Engine</div><p class="muted mt-2">Normalize inputs, map OpEx & unit mix; compute NOI/DSCR/LTV with lineage.</p></template>
+          <template v-else-if="tab==='underwriting'"><div class="font-semibold">AI-Powered Underwriting</div><p class="muted mt-2">Excel-native outputs, debt sizing, covenants, sensitivities.</p></template>
+          <template v-else-if="tab==='reporting'"><div class="font-semibold">Intelligent Reporting</div><p class="muted mt-2">IC/Lender memo generation, branded decks, share links.</p></template>
+          <template v-else-if="tab==='scenario'"><div class="font-semibold">Conversational Scenario Tool</div><p class="muted mt-2">“Generate a new scenario for the investor meeting.”</p></template>
+          <template v-else><div class="font-semibold">Secure Deal Vault</div><p class="muted mt-2">Least-privilege sharing, watermarking, audit logs.</p></template>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================== S6 — Slide 6 =================== -->
+    <section id="s6" class="py-14 sm:py-16 lg:py-20 border-t border-brand-line">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <h2 class="h2 reveal slide-left">Simple, Scalable Pricing — Start Small, Grow Fast</h2>
+        <p class="muted mt-2">No setup fees. Cancel anytime.</p>
+        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 fade-item delay-2">
+          <div v-for="p in pricing" :key="p.name" class="card p-6 border-2" :class="p.popular?'border-[#11B0A2]':'border-[#E5E8EF]'">
+            <div class="text-lg font-semibold flex items-center justify-between">
+              {{p.name}}
+              <span v-if="p.popular" class="text-xs px-2 py-0.5 rounded-full bg-[#11B0A2] text-white">Most Popular</span>
+            </div>
+            <div class="text-3xl font-extrabold mt-2">{{p.price}}</div>
+            <ul class="mt-4 space-y-2 muted">
+              <li v-for="b in p.bullets" :key="b">• {{b}}</li>
+            </ul>
+            <button class="mt-5 w-full btn" :class="p.popular?'btn-primary':'btn-outline'">{{p.cta}}</button>
+          </div>
+        </div>
+        <div class="mt-8 card p-6 fade-item delay-3">
+          <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
+          <h2 class="h2">Ready to underwrite your next deal in the easy way?</h2>
+          <p>Spin up a sandbox with your own OM and rent roll, or jump on a 15-minute walkthrough.</p>
+          </div>
+          <div class="mt-6 flex flex-wrap justify-center gap-3">
+            <button class="btn btn-primary">Start Free Trial</button>
+            <button class="btn btn-outline">Book Demo</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== S7 — Contact / Demo with CRE buildings background ========== -->
+    <section id="s7"
+      class="relative isolate overflow-hidden py-14 sm:py-16 lg:py-20 font-sans"
+      style="background-image:
+              linear-gradient(rgba(11,31,51,0.70), rgba(11,31,51,0.70)),
+              url('assets/multifamily_pic.jpg');
+            background-size: cover;
+            background-position: center;">
+      <!-- optional subtle noise/vignette -->
+      <div class="pointer-events-none absolute inset-0 bg-black/0"></div>
+
+      <div class="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-10">
+        <!-- Left copy (white on image) -->
+        <div class="text-white reveal slide-left">
+          <h2 class="h2">Let's talk about your next deal</h2>
+          <p class="mt-3 text-[15px] leading-7 text-white/85 max-w-xl">
+            Ready to see <strong>CRE Multifamily Autopilot</strong> in action?
+            Tell us about your workflow — we'll show how AI fits your process.
+          </p>
+
+          <ul class="mt-6 space-y-3 text-[15px]">
+            <li class="flex items-start gap-3">
+              <span class="mt-2 h-2.5 w-2.5 rounded-full bg-[#20C997]"></span>
+              <div>
+                <span class="mr-2">📧</span>
+                <a href="mailto:contact@creautopilot.ai"
+                  class="underline decoration-white/40 underline-offset-2 hover:text-teal-200">
+                  contact@creautopilot.ai
+                </a>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="mt-2 h-2.5 w-2.5 rounded-full bg-[#20C997]"></span>
+              <div>
+                <span class="mr-2">📍</span>
+                Philadelphia, PA | New York, NY | Washington, DC | Remote
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Right form card (stays light for contrast) -->
+        <div class="rounded-2xl border border-white/20 bg-white shadow-[0_6px_24px_rgba(16,35,63,0.20)] fade-item delay-1">
+          <div class="p-6 sm:p-8">
+            <h3 class="font-display text-[20px] font-semibold text-[#10233F]">Get in Touch</h3>
+            <p class="mt-1 text-sm text-[#6B7B8F]">We'll respond within 24 hours</p>
+
+            <form class="mt-6 space-y-4" onsubmit="event.preventDefault();">
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-[#10233F]">Name</label>
+                  <input type="text" placeholder="Your name"
+                    class="mt-1 w-full rounded-xl border border-[#E5E8EF] bg-white px-3.5 py-2.5 text-[15px] text-[#10233F]
+                          outline-none focus:ring-4 focus:ring-[#11B0A2]/20 focus:border-[#11B0A2]" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-[#10233F]">Company</label>
+                  <input type="text" placeholder="Your company"
+                    class="mt-1 w-full rounded-xl border border-[#E5E8EF] bg-white px-3.5 py-2.5 text-[15px] text-[#10233F]
+                          outline-none focus:ring-4 focus:ring-[#11B0A2]/20 focus:border-[#11B0A2]" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-[#10233F]">Email</label>
+                <input type="email" placeholder="your@email.com"
+                  class="mt-1 w-full rounded-xl border border-[#E5E8EF] bg-white px-3.5 py-2.5 text-[15px] text-[#10233F]
+                        outline-none focus:ring-4 focus:ring-[#11B0A2]/20 focus:border-[#11B0A2]" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-[#10233F]">Message</label>
+                <textarea rows="4" placeholder="Tell us about your workflow..."
+                  class="mt-1 w-full rounded-xl border border-[#E5E8EF] bg-white px-3.5 py-2.5 text-[15px] text-[#10233F]
+                        outline-none focus:ring-4 focus:ring-[#11B0A2]/20 focus:border-[#11B0A2]"></textarea>
+              </div>
+
+              <div class="mt-2 grid sm:grid-cols-2 gap-3">
+                <button type="submit"
+                  class="inline-flex items-center justify-center rounded-xl bg-[#11B0A2] px-5 py-3 text-white font-semibold hover:bg-[#0D8E84]">
+                  Submit
+                </button>
+                <a href="#"
+                  class="inline-flex items-center justify-center rounded-xl border border-[#E5E8EF] px-5 py-3 text-[#10233F] font-semibold hover:bg-[#F7F9FB]">
+                  Schedule 15-Min Demo
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+
+
+    <!-- ================== S8 — Slide 8 =================== -->
+    <section id="s8" class="py-14 sm:py-16 lg:py-20 border-t border-brand-line">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 fade-item delay-2">
+        <h2 class="h2">What Early Adopters Are Saying</h2>
+        <p class="muted mt-2 mb-2">Trusted by lenders, brokers & advisors</p>
+        <!-- Slide 1 -->
+        <div id="testi-slides" class="relative">
+          <div class="testi-slide grid md:grid-cols-2 gap-10">
+            <div class="card p-6"><blockquote class="text-lg leading-7">“It's like having a full-time analyst that never sleeps.”</blockquote><div class="muted mt-3">Managing Director, Multifamily Fund</div>
+              <div class="mt-1 text-[#F7B500]">
+                  <!-- 5 stars -->
+                <span aria-hidden="true">★★★★★</span>
+              </div>
+          
+            </div>
+            <div class="card p-6"><blockquote class="text-lg leading-7">“I can ask anything about my deals — and get instant, data-backed answers.”</blockquote><div class="muted mt-3">VP, Acquisitions</div>
+              <div class="mt-1 text-[#F7B500]">
+                <!-- 5 stars -->
+                <span aria-hidden="true">★★★★★</span>
+              </div>
+          
+            </div>
+          </div>
+        
+          <!-- Slide 2 -->
+
+          <div class="testi-slide grid md:grid-cols-2 gap-10">
+            <div class="card p-6"><blockquote class="text-lg leading-7">“The Excel outputs are audit-ready and save our team hours every week.”</blockquote><div class="muted mt-3">Head of CRE, Infra Fund</div>
+              <div class="mt-1 text-[#F7B500]">
+                  <!-- 5 stars -->
+                <span aria-hidden="true">★★★★★</span>
+              </div>
+            </div>
+          
+            <div class="card p-6"><blockquote class="text-lg leading-7">“We moved from messy PDFs to consistent models and lender memos in minutes.”</blockquote><div class="muted mt-3">Director, Private Equity</div>
+              <div class="mt-1 text-[#F7B500]">
+                <!-- 5 stars -->
+                <span aria-hidden="true">★★★★★</span>
+              </div>
+            </div>
+          </div>
+        
+
+          <!-- Slide 3 -->
+          <div class="testi-slide grid md:grid-cols-2 gap-10">
+            <div class="card p-6"><blockquote class="text-lg leading-7">“Scenario runs and sensitivities are now a 30-second conversation.”</blockquote><div class="muted mt-3">Principal, Family Office</div>
+              <div class="mt-1 text-[#F7B500]">
+                  <!-- 5 stars -->
+                <span aria-hidden="true">★★★★★</span>
+              </div>
+            </div>
+            <div class="card p-6"><blockquote class="text-lg leading-7">“The IC deck export looks like something a senior associate built.”</blockquote><div class="muted mt-3">CIO, Real Estate Platform</div>
+              <div class="mt-1 text-[#F7B500]">
+                <!-- 5 stars -->
+                <span aria-hidden="true">★★★★★</span>
+              </div>
+            
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dots -->
+      <div id="testi-dots" class="mt-6 flex items-center justify-center gap-3" role="tablist" aria-label="Testimonials">
+        <button type="button" class="testi-dot h-2.5 w-2.5 rounded-full bg-[#14B1A3]" data-index="0" aria-label="Slide 1"></button>
+        <button type="button" class="testi-dot h-2.5 w-2.5 rounded-full bg-[#BFC9D7]" data-index="1" aria-label="Slide 2"></button>
+        <button type="button" class="testi-dot h-2.5 w-2.5 rounded-full bg-[#BFC9D7]" data-index="2" aria-label="Slide 3"></button>
+      </div>
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+        <!-- marquee wrapper (background matches your page bg #F5F6F8) -->
+        <div class="marquee rounded-xl mt-2 px-4 py-4">
+          <div class="marquee-track">
+            <!-- Group A -->
+            <img class="logo-item" src="assets/logos/bwe.png"          alt="BWE">
+            <img class="logo-item" src="assets/logos/merchants.png"    alt="Merchants Capital">
+            <img class="logo-item" src="assets/logos/colliers.png"     alt="Colliers">
+            <img class="logo-item" src="assets/logos/acore.png"        alt="ACORE Capital">
+            <img class="logo-item" src="assets/logos/columbia.png"     alt="Columbia National">
+            <img class="logo-item" src="assets/logos/webster.png"      alt="Webster Bank">
+            <img class="logo-item" src="assets/logos/northmarq.png"    alt="Northmarq">
+
+            <!-- Group B (duplicate A exactly for seamless loop) -->
+            <img class="logo-item" src="assets/logos/bwe.png"          alt="BWE">
+            <img class="logo-item" src="assets/logos/merchants.png"    alt="Merchants Capital">
+            <img class="logo-item" src="assets/logos/colliers.png"     alt="Colliers">
+            <img class="logo-item" src="assets/logos/acore.png"        alt="ACORE Capital">
+            <img class="logo-item" src="assets/logos/columbia.png"     alt="Columbia National">
+            <img class="logo-item" src="assets/logos/webster.png"      alt="Webster Bank">
+            <img class="logo-item" src="assets/logos/northmarq.png"    alt="Northmarq">
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Footer -->
+    <footer class="border-t border-brand-line">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 grid gap-6 md:grid-cols-3 text-sm text-brand-slate">
+        <div>
+          <img src="YOUR_LOGO.png" class="h-7 w-auto" alt="CRE Autopilot" onerror="this.style.display='none'"/>
+          <p class="mt-3 text-xs">© <span id="yr"></span> CRE Autopilot Inc. All rights reserved.</p>
+        </div>
+        <div>
+          <div class="font-semibold mb-2 text-brand-navy">Product</div>
+          <ul class="space-y-1">
+            <li><a href="#s3" class="hover:text-brand-navy">How it works</a></li>
+            <li><a href="#s4" class="hover:text-brand-navy">Benefits</a></li>
+            <li><a href="#s5" class="hover:text-brand-navy">Deep Dive</a></li>
+            <li><a href="#s6" class="hover:text-brand-navy">Pricing</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="font-semibold mb-2 text-brand-navy">Company</div>
+          <ul class="space-y-1">
+            <li><a href="#s8" class="hover:text-brand-navy">Customers</a></li>
+            <li><a href="#" class="hover:text-brand-navy">Terms</a></li>
+            <li><a href="#" class="hover:text-brand-navy">Privacy</a></li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Vue 3 (for tabs/menu). If blocked, the page still shows. -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const section   = document.querySelector('#s8');
+      if (!section) return;
+
+      const container = section.querySelector('#testi-slides');
+      const slides    = Array.from(container.querySelectorAll('.testi-slide'));
+      const dots      = Array.from(section.querySelectorAll('.testi-dot'));
+      if (!slides.length || !dots.length) return;
+
+      // 1) active index first
+      let i = 0;
+      let busy = false;
+
+      // 2) show only the active slide
+      slides.forEach((el, k) => el.style.display = k === i ? '' : 'none');
+
+      // 3) measure only the active slide
+      function measureHeight(idx = i) {
+        const h = slides[idx].offsetHeight || 0;
+        container.style.height = h + 'px';
+      }
+
+      function cleanup(el) {
+        el.classList.remove(
+          'testi-anim-in-right','testi-anim-out-left',
+          'testi-anim-in-left','testi-anim-out-right'
+        );
+      }
+
+      function show(idx) {
+        if (busy || idx === i) return;
+        busy = true;
+
+        const cur = slides[i];
+        const nxt = slides[idx];
+        const forward = idx > i;
+
+        // make next visible so it can animate + reserve height for it
+        nxt.style.display = '';
+        measureHeight(idx);
+
+        // apply animations
+        if (forward) {
+          nxt.classList.add('testi-anim-in-right');
+          cur.classList.add('testi-anim-out-left');
+        } else {
+          nxt.classList.add('testi-anim-in-left');
+          cur.classList.add('testi-anim-out-right');
+        }
+
+        // update dots
+        dots.forEach((d, k) => d.style.background = (k === idx ? '#14B1A3' : '#BFC9D7'));
+
+        cur.addEventListener('animationend', () => {
+          cur.style.display = 'none';
+          cleanup(cur); cleanup(nxt);
+          i = idx;
+          busy = false;
+          measureHeight(); // final settle
+        }, { once: true });
+      }
+
+      dots.forEach((d, k) => d.addEventListener('click', () => show(k)));
+
+      // auto-advance (pause on hover)
+      let timer = setInterval(() => show((i + 1) % slides.length), 3000);
+      container.addEventListener('mouseenter', () => clearInterval(timer));
+      container.addEventListener('mouseleave', () => {
+        clearInterval(timer);
+        timer = setInterval(() => show((i + 1) % slides.length), 3000);
+      });
+
+      // initial height
+      measureHeight();
+      window.addEventListener('resize', () => measureHeight());
+    });
+  </script>
+  <script>
+    (function(){
+      const yr = document.getElementById('yr'); if (yr) yr.textContent = new Date().getFullYear();
+    })();
+
+    const { createApp, ref } = window.Vue || {};
+    if (createApp) {
+      createApp({
+        setup(){
+          const mobile = ref(false);
+          const links = [
+            {text:'Home',href:'#s1'},{text:'About',href:'#s2'},{text:'How it works',href:'#s3'},
+            {text:'Benefits',href:'#s4'},{text:'Deep Dive',href:'#s5'},{text:'Pricing',href:'#s6'},
+            {text:'Get Started',href:'#s7'},{text:'Customers',href:'#s8'}
+          ];
+          const deepTabs = [
+            {key:'engine',label:'Deal Analysis Engine'},
+            {key:'underwriting',label:'AI-Powered Underwriting'},
+            {key:'reporting',label:'Intelligent Reporting'},
+            {key:'scenario',label:'Conversational Scenario Tool'},
+            {key:'vault',label:'Secure Deal Vault'},
+          ];
+          const tab = ref('engine');
+          const pricing = [
+            {name:'Starter',price:'$99/mo',bullets:['15 deals/month','Chat UI','Excel exports','Extra - $10 per extra deal','Custom Templates - $200 per template'], cta:'Select Plan',popular:false},
+            {name:'Pro',price:'$499/mo',bullets:['100 deals/month','Shared workspace','Reporting automation','Extra Deals - $10 per extra deal','Custom Templates - $200 per template'],cta:'Select Plan',popular:true},
+            {name:'Enterprise',price:'Custom',bullets:['API integrations','White label','SSO & dedicated support','Extra Deals - free','Custom Templates - free'],cta:'Contact Us',popular:false}
+          ];
+          return { mobile, links, deepTabs, tab, pricing };
+        }
+      }).mount('#app');
+    }
+  </script>
+  <script>
+    /* Scroll-reveal for .reveal, .fade-item, and .stagger children */
+    (function(){
+      if (!('IntersectionObserver' in window)) {
+        // No IO support: just show content
+        document.querySelectorAll('.reveal,.fade,.fade-item,.stagger > *').forEach(el => {
+          el.classList.add('in');
+        });
+        return;
+      }
+
+      const opts = { root: null, rootMargin: '0px 0px -10% 0px', threshold: 0.18 };
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (!e.isIntersecting) return;
+
+          const el = e.target;
+
+          // If it's a container with .stagger, mark the container and let CSS handle children delays
+          if (el.classList.contains('stagger')) {
+            el.classList.add('in');
+          } else {
+            // Single element (reveal or fade-item)
+            el.classList.add('in');
+          }
+
+          io.unobserve(el); // animate once
+        });
+      }, opts);
+
+      // Observe reveal containers, fade-items, and stagger containers
+      document.querySelectorAll('.reveal,.fade,.fade-item,.stagger').forEach(el => io.observe(el));
+    })();
+  </script>
+  <script>
+    (function(){
+      const userEl = document.getElementById('typed-msg');
+      const aiEl   = document.getElementById('typed-ai');
+      if (!userEl || !aiEl) return;
+
+      const userMsg = 'Underwrite 123 Main Street.';
+      const aiMsg   = "Here's your IRR, rent comps, and assumptions.";
+      const speed   = 40;   // ms per char
+      const pause   = 450;  // gap between user -> AI
+
+      function typeText(el, text, perChar, onDone){
+        let i = 0;
+        (function tick(){
+          el.textContent = text.slice(0, i++);
+          if (i <= text.length) setTimeout(tick, perChar);
+          else if (onDone) onDone();
+        })();
+      }
+
+      function runSequence(){
+        typeText(userEl, userMsg, speed, () => {
+          setTimeout(() => typeText(aiEl, aiMsg, speed), pause);
+        });
+      }
+
+      // Start when the chat card (or #s1) is visible
+      const target = document.getElementById('chat-card') || document.getElementById('s1');
+      if ('IntersectionObserver' in window && target){
+        const io = new IntersectionObserver((entries)=>{
+          if (entries.some(e => e.isIntersecting)){
+            runSequence();
+            io.disconnect();
+          }
+        }, { threshold: 0.3 });
+        io.observe(target);
+      } else {
+        runSequence();
+      }
+    })();
+  </script>
+  
+
+</body>
+</html>
